@@ -33,3 +33,13 @@ Teleport to marker (only thing in here so far)
 
 ## Ped Changer menu
 Change ped to one in the list.
+
+# Credits
+Main source I have used for this: https://github.com/KimonoBoy/SHVDNTutorial-NucleiLite/wiki
+
+None of this was possible, if it wasn't for the **humble** and **amazing** guys below  
+
+**Alexander Blade** - **ScriptHookV**  
+**Crosire** - **ScriptHookVDotNet** (for us **.NET**-lovers)  
+**Lemon** - **LemonUI** (and **Guad** for the initial **NativeUI**-library that **LemonUI** is based on)    
+**JohnFromGWN** - For **feedback** and **suggestions**  
