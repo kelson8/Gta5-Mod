@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using GTA;
@@ -17,6 +19,12 @@ namespace TutorialMod
     // Currently it resets when the menu reloads.
     // TODO Figure out how to create submenus nested within submenus, like a teleport submenu
     // Use xml for storing stuff if needed.
+
+    /* Place holder for empty pages:
+    NativeItem blankItem = new NativeItem("Not setup!", "This page hasn't been created yet!");
+    cheatsMenu.Add(blankItem);
+    */
+
     public class Main : Script
     {
         ObjectPool menuPool = new ObjectPool();
@@ -63,6 +71,8 @@ namespace TutorialMod
 
         private void CreatePlayerMenu()
         {
+            // TODO Add force field option (Blows up cars around player and push them away.)
+
             // Fix player
             NativeItem itemFixPlayer = new NativeItem("Fix player", "Restores player's health and armor");
             // This is the equivalent to:
@@ -181,6 +191,7 @@ namespace TutorialMod
                     {
                         // If player is in vehicle, remove old one before spawning in new
                         // Get current vehicle and delete it.
+                        // TODO Fix this to where it doesn't rotate the vehicle if player is in a vehicle.
                         if (character.IsInVehicle())
                         {
                             Vehicle currentVehicle = character.CurrentVehicle;
@@ -204,11 +215,33 @@ namespace TutorialMod
 
         private void CreateCheatMenu()
         {
-            // Not implemented yet
-            //NativeCheckboxItem gravityCheckBox = new NativeCheckboxItem("Gravity", "Change the gravity to set value");
-            NativeItem blankItem = new NativeItem("Not setup!", "This page hasn't been created yet!");
-            cheatsMenu.Add(blankItem);
 
+
+            // They are using floats in Menyoo and defining values with strings too
+            // https://github.com/MAFINS/MenyooSP/blob/master/Solution/source/Submenus/WeatherOptions.cpp#L37
+
+            // Now that I possibly got this sorted, how do I add it to the listItemGravityLevel.
+            // Not sure if this is what I would need to use.
+            SortedDictionary<string, int> gravityList = new SortedDictionary<string, int>
+            {
+                { "Normal Gravity", 0 },
+                {"Grav1", 1 },
+                {"Grav2", 2 },
+                {"Grav3", 3 }
+            };
+
+            // I got this part of it working
+            // First time using functions with a hash value like this.
+            // TODO Add what each gravity level is in the list (0, default) (1, ...) (2 ...) (3 ...)
+            NativeListItem<int> listItemGravityLevel = new NativeListItem<int>("Gravity:", "Sets your gravity level", 0, 1, 2, 3);
+            // I wonder if this function works with floats.
+            //NativeListItem<float> listItemGravityLevel = new NativeListItem<float>("Gravity:", "Sets your gravity level", 0.008f, 0.015f, 0.1f, 0.2f);
+            listItemGravityLevel.ItemChanged += (sender, args) => {
+
+                Function.Call(Hash.SET_GRAVITY_LEVEL, args.Object);
+                Notification.Show($"Your gravity has been set to {args.Object}");
+            };
+            cheatsMenu.Add(listItemGravityLevel);
         }
 
         private void CreateTeleportMenu()
@@ -237,6 +270,8 @@ namespace TutorialMod
 
                         // Use this anytime you want to teleport the player.
                         // TODO figure out how to set the coordinates invidually so i can do "pos.Y + 5"
+                        // Something like this below might work, but it complains about not being a Vector3 if used.
+                        // float targetPosX = pos.X;
                         Game.Player.Character.Position = pos;
 
                         Notification.Show("You have been teleported to the marker");
