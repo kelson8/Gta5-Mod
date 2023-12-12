@@ -262,21 +262,30 @@ namespace TutorialMod
         private void CreateTeleportMenu()
         {
             NativeItem itemTeleportWaypoint = new NativeItem("Waypoint", "Teleports you to the waypoint on the map");
-            //World.WaypointPosition;
 
             itemTeleportWaypoint.Activated += (sender, args) =>
             {
                 if (Game.IsWaypointActive)
                 {
-                    // Disable teleporting in vehicle, it's teleports the player without the vehicle.
-                    // TODO Fix this to where it works on a vehicle too.
-                    if (Game.Player.Character.IsInVehicle())
+                    var player = Game.Player;
+                    var playerchar = player.Character;
+                    Vector3 pos = World.WaypointPosition;
+
+                    if (playerchar.IsInVehicle())
                     {
-                        Notification.Show("Not implemented for vehicles yet!");
+
+                        // Changing this to player.getHashCode() Makes it to where I can teleport the car.
+                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y, pos.Z, 0.0, true, false, true);
+
+                        Notification.Show("You teleported your car to the ~p~marker~w~!");
+                        // Get last vehicle player was in.
+                        //Vehicle vehicle = playerchar.CurrentVehicle;
+                        //Vehicle lastVeh = playerchar.LastVehicle;
+                        //lastVeh.Delete();
+
                     }
                     else
                     {
-                        Vector3 pos = World.WaypointPosition;
 
                         // https://github.com/scripthookvdotnet/scripthookvdotnet/wiki/How-Tos#calling-native-functions
                         // Testing set entity coords
@@ -289,15 +298,16 @@ namespace TutorialMod
                         // float targetPosX = pos.X;
                         Game.Player.Character.Position = pos;
 
-                        Notification.Show("You have been teleported to the marker");
+                        Notification.Show("You have been teleported to the ~p~marker~w~!");
                     }
                 }
                 else
                 {
-                    Notification.Show("Error, no waypoint is set!");
+                    Notification.Show("~r~Error~w~: no waypoint is set!");
                 }
             };
             teleportMenu.Add(itemTeleportWaypoint);
+
 
             /* 
             // https://github.com/scripthookvdotnet/scripthookvdotnet/wiki/How-Tos#calling-native-functions
