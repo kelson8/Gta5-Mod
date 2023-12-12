@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Windows.Forms;
 using GTA;
 using GTA.Math;
@@ -39,8 +40,11 @@ namespace TutorialMod
         NativeMenu pedChangerMenu = new NativeMenu("NucleiLite", "Change model");
 
         bool canSuperJump = false;
-        bool NeverWanted = false;
+        bool isNeverWanted = false;
         bool SpawnIntoVehicle = false;
+        bool isFlamingBulletsEnabled = false;
+        bool isExplosiveBulletsEnabled = false;
+        bool isExplosiveMeleeEnabled = false;
 
         public Main()
         {
@@ -86,7 +90,7 @@ namespace TutorialMod
             playerMenu.Add(itemFixPlayer);
 
             // Invincible
-            NativeCheckboxItem checkBoxInvincible = new NativeCheckboxItem("Invincible", "You can no longer die.");
+            NativeCheckboxItem checkBoxInvincible = new NativeCheckboxItem("Invincible", "Gives you god mode");
             checkBoxInvincible.CheckboxChanged += (sender, args) =>
             {
                 Game.Player.Character.IsInvincible = checkBoxInvincible.Checked;
@@ -104,10 +108,10 @@ namespace TutorialMod
             playerMenu.Add(listItemWantedLevel);
 
             // Never wanted, Well it did work, I just copied what I was doing for the super jump code.
-            NativeCheckboxItem checkboxNeverWanted = new NativeCheckboxItem("Never Wanted", "You can no longer get cops.");
+            NativeCheckboxItem checkboxNeverWanted = new NativeCheckboxItem("Never Wanted");
             checkboxNeverWanted.CheckboxChanged += (sender, args) =>
             {
-                NeverWanted = checkboxNeverWanted.Checked;
+                isNeverWanted = checkboxNeverWanted.Checked;
             };
             playerMenu.Add(checkboxNeverWanted);
 
@@ -129,12 +133,20 @@ namespace TutorialMod
             */
 
             // Super jump
-            NativeCheckboxItem checkBoxSuperJump = new NativeCheckboxItem("Superjump", "Jump very high");
+            NativeCheckboxItem checkBoxSuperJump = new NativeCheckboxItem("Super jump");
             checkBoxSuperJump.CheckboxChanged += (sender, args) =>
             {
                 canSuperJump = checkBoxSuperJump.Checked;
             };
             playerMenu.Add(checkBoxSuperJump);
+
+            // Explosive melee
+            NativeCheckboxItem checkBoxExplosiveMelee = new NativeCheckboxItem("Explosive melee");
+            checkBoxExplosiveMelee.CheckboxChanged += (sender, args) =>
+            {
+                isExplosiveMeleeEnabled = checkBoxExplosiveMelee.Checked;
+            };
+            playerMenu.Add(checkBoxExplosiveMelee);
         }
 
         private void CreateWeaponsMenu()
@@ -152,6 +164,20 @@ namespace TutorialMod
                 Notification.Show("Player gained all weapons with max ammunition.");
             };
             weaponsMenu.Add(itemGiveAllWeapons);
+
+            NativeCheckboxItem checkBoxBulletsFire = new NativeCheckboxItem("Flaming bullets");
+            checkBoxBulletsFire.CheckboxChanged += (sender, args) =>
+            {
+                isFlamingBulletsEnabled = checkBoxBulletsFire.Checked;
+            };
+            weaponsMenu.Add(checkBoxBulletsFire);
+
+            NativeCheckboxItem checkBoxBulletsExplosive = new NativeCheckboxItem("Explosive Bullets");
+            checkBoxBulletsExplosive.CheckboxChanged += (sender, args) =>
+            {
+                isExplosiveBulletsEnabled = checkBoxBulletsExplosive.Checked;
+            };
+            weaponsMenu.Add(checkBoxBulletsExplosive);
         }
 
         private void CreateVehicleSpawnerMenu()
@@ -175,17 +201,6 @@ namespace TutorialMod
                     // TODO Make this code only spawn set amount of vehicles in a config.
                     // So if it's set to 2, set max amount of spawned cars at a time to 2.
                     Vehicle vehicle = World.CreateVehicle(vehicleModel, character.Position + character.ForwardVector * 3.0f, character.Heading + 90.0f);
-
-                    // This works, now to replace current vehicle with the new one, add check box for spawning into driver seat.
-                    //character.SetIntoVehicle(vehicle, VehicleSeat.Driver);
-
-                    // This works like this so i'll keep it here.
-                    /*
-                    if (SpawnIntoVehicle)
-                    {
-                        character.SetIntoVehicle(vehicle, VehicleSeat.Driver);
-                    }
-                    */
 
                     if (SpawnIntoVehicle)
                     {
@@ -335,17 +350,31 @@ namespace TutorialMod
             // Needed for the Menu to function
             menuPool.Process();
 
-            if (NeverWanted)
+            if(isNeverWanted && Game.Player.WantedLevel > 0)
             {
                 Game.Player.WantedLevel = 0;
             }
 
-            if (canSuperJump)
+            if(canSuperJump)
             {
                 Game.Player.SetSuperJumpThisFrame();
             }
-        }
 
+            if(isExplosiveMeleeEnabled)
+            {
+                Game.Player.SetExplosiveMeleeThisFrame();
+            }
+
+            if (isFlamingBulletsEnabled)
+            {
+                Game.Player.SetFireAmmoThisFrame();
+            }
+
+            if(isExplosiveBulletsEnabled)
+            {
+                Game.Player.SetExplosiveAmmoThisFrame();
+            }
+        }
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F && e.Control)
