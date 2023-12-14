@@ -26,6 +26,9 @@ namespace TutorialMod
     cheatsMenu.Add(blankItem);
     */
 
+    // Dubai Highway start coords:
+    // X: 4965.44, Y: -2935.58, Z: 21.00, Heading 4.66
+
     public class Main : Script
     {
         ObjectPool menuPool = new ObjectPool();
@@ -34,6 +37,7 @@ namespace TutorialMod
         // Sub menus
         NativeMenu playerMenu = new NativeMenu("NucleiLite", "Player Menu");
         NativeMenu vehicleSpawnerMenu = new NativeMenu("NucleiLite", "Vehicle Spawner Menu");
+        NativeMenu vehicleOptionsMenu = new NativeMenu("NucleiLite", "Vehicle Options Menu");
         NativeMenu weaponsMenu = new NativeMenu("NucleiLite", "Weapons Menu");
         NativeMenu cheatsMenu = new NativeMenu("NucleiLite", "Cheat menu");
         NativeMenu teleportMenu = new NativeMenu("NucleiLite", "Teleport menu");
@@ -51,6 +55,7 @@ namespace TutorialMod
             CreateMainMenu();
             CreatePlayerMenu();
             CreateVehicleSpawnerMenu();
+            CreateVehicleOptionsMenu();
             CreateWeaponsMenu();
             CreateCheatMenu();
             CreateTeleportMenu();
@@ -67,6 +72,7 @@ namespace TutorialMod
             // Define sub menus under mainMenu
             mainMenu.AddSubMenu(playerMenu);
             mainMenu.AddSubMenu(vehicleSpawnerMenu);
+            mainMenu.AddSubMenu(vehicleOptionsMenu);
             mainMenu.AddSubMenu(weaponsMenu);
             mainMenu.AddSubMenu(cheatsMenu);
             mainMenu.AddSubMenu(teleportMenu);
@@ -228,6 +234,30 @@ namespace TutorialMod
             }
         }
 
+        private void CreateVehicleOptionsMenu()
+        {
+            var player = Game.Player;
+            var playerchar = player.Character;
+
+            NativeItem fixVehicleItem = new NativeItem("Repair vehicle", "Fix your current vehicle.");
+
+            fixVehicleItem.Activated += (sender, args) =>
+            {
+                if (playerchar.IsInVehicle())
+                {
+                    Vehicle veh = playerchar.CurrentVehicle;
+                    veh.Repair();
+                    Notification.Show("Your vehicle has been ~y~repaired~w~!");
+                }
+                else
+                {
+                    Notification.Show("~r~Error~w~: This only works on vehicles!");
+                }
+            };
+            vehicleOptionsMenu.Add(fixVehicleItem);
+            
+        }
+
         private void CreateCheatMenu()
         {
 
@@ -263,6 +293,8 @@ namespace TutorialMod
         {
             NativeItem itemTeleportWaypoint = new NativeItem("Waypoint", "Teleports you to the waypoint on the map");
 
+            //TODO Fix this to where it doesn't put the player/vehicle under the world.
+            //TODO Fix this to where it isn't a bunch of duplicated code for every teleport option.
             itemTeleportWaypoint.Activated += (sender, args) =>
             {
                 if (Game.IsWaypointActive)
@@ -275,7 +307,10 @@ namespace TutorialMod
                     {
 
                         // Changing this to player.getHashCode() Makes it to where I can teleport the car.
-                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y, pos.Z, 0.0, true, false, true);
+                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, true, false, true);
+
+                        // This might work for vehicles, I couldn't get it working like this though.
+                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
 
                         Notification.Show("You teleported your car to the ~p~marker~w~!");
                         // Get last vehicle player was in.
@@ -290,13 +325,19 @@ namespace TutorialMod
                         // https://github.com/scripthookvdotnet/scripthookvdotnet/wiki/How-Tos#calling-native-functions
                         // Testing set entity coords
                         // Functions might be useful if I can figure out how to use them, this wasn't working but I fixed it.
-                        //Function.Call(Hash.SET_ENTITY_COORDS, Game.Player.GetHashCode(), pos.X, pos.Y +5, pos.Z);
+                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
 
                         // Use this anytime you want to teleport the player.
                         // TODO figure out how to set the coordinates invidually so i can do "pos.Y + 5"
                         // Something like this below might work, but it complains about not being a Vector3 if used.
                         // float targetPosX = pos.X;
-                        Game.Player.Character.Position = pos;
+                        var zCoords = World.GetGroundHeight(pos);
+                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y, zCoords, 0.0, false, false, true);
+                        
+                        //Game.Player.Character.Position = pos;
+
+                        // Player still falls through ground in certain areas with this below.
+                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
 
                         Notification.Show("You have been teleported to the ~p~marker~w~!");
                     }
@@ -307,15 +348,6 @@ namespace TutorialMod
                 }
             };
             teleportMenu.Add(itemTeleportWaypoint);
-
-
-            /* 
-            // https://github.com/scripthookvdotnet/scripthookvdotnet/wiki/How-Tos#calling-native-functions
-            // Testing set entity coords
-            //
-            Function.Call(Hash.SET_ENTITY_COORDS, pos.X, pos.Y, pos.Z, false, false, false, false);
-            */
-
         }
 
         private void CreatePedChangerMenu()
@@ -349,6 +381,7 @@ namespace TutorialMod
             menuPool.Add(mainMenu);
             menuPool.Add(playerMenu);
             menuPool.Add(vehicleSpawnerMenu);
+            menuPool.Add(vehicleOptionsMenu);
             menuPool.Add(weaponsMenu);
             menuPool.Add(cheatsMenu);
             menuPool.Add(teleportMenu);
