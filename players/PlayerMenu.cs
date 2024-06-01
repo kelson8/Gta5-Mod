@@ -66,16 +66,16 @@ namespace KCNetGTAV.players
             // TODO Add force field option (Blows up cars around player and push them away.)
 
             // Fix player
-            NativeItem itemFixPlayer = new NativeItem("Fix player", "Restores player's health and armor");
+            NativeItem itemHealPlayer = new NativeItem("Heal player", "Restores player's health and armor");
             // This is the equivalent to:
             // private void FixPlayer(object sender, EventArgs e)
-            itemFixPlayer.Activated += (sender, args) =>
+            itemHealPlayer.Activated += (sender, args) =>
             {
                 Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                 Game.Player.Character.Armor = Game.Player.MaxArmor;
                 Notification.Show("Health and armor restored!");
             };
-            playerMenu.Add(itemFixPlayer);
+            playerMenu.Add(itemHealPlayer);
 
             // Invincible
             NativeCheckboxItem checkBoxInvincible = new NativeCheckboxItem("Invincible", "Gives you god mode");

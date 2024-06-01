@@ -7,17 +7,13 @@ I plan on adding more features as I learn C#.
 
 # Functions currently in this mod:
 ## Player menu
-Fix player (heal player health and armor)
-
-Invincible (Gives you god mode)
-
-Wanted level (Change wanted level from 0-5)
-
-Never wanted
-
-Spawn into vehicle (Puts you in the driver seat of a car spawned with this menu)
-
-Super jump
+* Heal player (heal player health and armor)
+* Invincible (Gives you god mode)
+* Wanted level (Change wanted level from 0-5) (Currently broken)
+* Never wanted
+* Spawn into vehicle (Puts you in the driver seat of a car spawned with this menu)
+* Super jump
+* Explosive Melee
 
 ## Vehicle menu
 Vehicle spawner (only thing in here so far)
@@ -26,7 +22,7 @@ Vehicle spawner (only thing in here so far)
 Give all weapons (only thing in here so far)
 
 ## Cheat menu
-This is currently a placeholder for future use.
+* Gravity (This doesn't work yet.)
 
 ## Teleport menu
 Teleport to marker (only thing in here so far)
