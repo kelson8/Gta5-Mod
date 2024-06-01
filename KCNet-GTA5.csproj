@@ -7,11 +7,12 @@
     <ProjectGuid>{2D5E3A2F-5562-41A1-BF6A-625DEEDAB60F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TutorialMod</RootNamespace>
-    <AssemblyName>TutorialMod</AssemblyName>
+    <RootNamespace>KCNetGTAV</RootNamespace>
+    <AssemblyName>KCNet-GTA5</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -52,12 +53,26 @@
     <Compile Include="GivePlayerAllWeapons.cs" />
     <Compile Include="KillAll.cs" />
     <Compile Include="Main.cs" />
+    <Compile Include="misc\CheatsMenu.cs" />
+    <Compile Include="players\PedChanger.cs" />
+    <Compile Include="players\PlayerMenu.cs" />
+    <Compile Include="UI\menus\PedMenu.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="teleport\TeleportMenu.cs" />
+    <Compile Include="util\Messages.cs" />
+    <Compile Include="util\TestMenu.cs" />
+    <Compile Include="UI\menus\VehicleMenu.cs" />
+    <Compile Include="vehicles\VehicleOptions.cs" />
+    <Compile Include="vehicles\VehicleSpawner.cs" />
     <Compile Include="VehicleTest.cs" />
     <Compile Include="VehicleSpawner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="menu\" />
+    <Folder Include="weapons\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,25 +1,38 @@
-﻿using System;
+﻿// This could be useful for enabling test code, I always forget C# has preprocessors.
+//#define _TEST
+// I haven't figured out how to get the vehicle spawner working in another class so I disabeld it using #if !_TEST
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.Remoting.Channels;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
 using GTA.Math;
 using GTA.Native;
 using GTA.UI;
+using KCNetGTAV.misc;
+using KCNetGTAV.players;
+using KCNetGTAV.teleport;
+using KCNetGTAV.util;
+using KCNetGTAV.vehicles;
 using LemonUI;
 using LemonUI.Menus;
 
-namespace TutorialMod
+
+namespace KCNetGTAV
 {
 
-    // Most of this code came from this guide: https://github.com/KimonoBoy/SHVDNTutorial-NucleiLite/wiki/Developing-our-Mod-Menu#creating-our-menu-using-lemonui
+    // Most of this code came from this guide: https://github.com/KimonoBoy/SHVDNTutorial-KCNet-GTA5/wiki/Developing-our-Mod-Menu#creating-our-menu-using-lemonui
 
     // TODO store set values into a config file, so invincibility, never wanted and stuff like that stays on.
     // Currently it resets when the menu reloads.
     // TODO Figure out how to create submenus nested within submenus, like a teleport submenu
     // Use xml for storing stuff if needed.
+
+    // TODO Look into this sometime (Draw text on screen): https://gtaforums.com/topic/945754-solved-drawing-text-on-screen-c-scripthookvdotnet/
 
     /* Place holder for empty pages:
     NativeItem blankItem = new NativeItem("Not setup!", "This page hasn't been created yet!");
@@ -31,35 +44,72 @@ namespace TutorialMod
 
     public class Main : Script
     {
+        // Other classes
+        PedChanger pedChanger = new PedChanger();
+        CheatsMenu cheatsMenu = new CheatsMenu();
+        TeleportMenu teleportMenu = new TeleportMenu();
+        TestMenu testMenu = new TestMenu();
+        PlayerMenu playerMenu = new PlayerMenu();
+
+
+#if _TEST
+        VehicleSpawner vehicleSpawner = new VehicleSpawner();
+#endif
+
+#if !_TEST
+        NativeMenu vehicleSpawnerMenu = new NativeMenu("KCNet-GTA5", "Vehicle Spawner Menu");
+#endif
+
+        VehicleOptions vehicleOptions = new VehicleOptions();
+
         ObjectPool menuPool = new ObjectPool();
         // Main menu
-        NativeMenu mainMenu = new NativeMenu("NucleiLite", "Main Menu");
+        NativeMenu mainMenu = new NativeMenu("KCNet-GTA5", "Main Menu");
         // Sub menus
-        NativeMenu playerMenu = new NativeMenu("NucleiLite", "Player Menu");
-        NativeMenu vehicleSpawnerMenu = new NativeMenu("NucleiLite", "Vehicle Spawner Menu");
-        NativeMenu vehicleOptionsMenu = new NativeMenu("NucleiLite", "Vehicle Options Menu");
-        NativeMenu weaponsMenu = new NativeMenu("NucleiLite", "Weapons Menu");
-        NativeMenu cheatsMenu = new NativeMenu("NucleiLite", "Cheat menu");
-        NativeMenu teleportMenu = new NativeMenu("NucleiLite", "Teleport menu");
-        NativeMenu pedChangerMenu = new NativeMenu("NucleiLite", "Change model");
+        //NativeMenu playerMenu = new NativeMenu("KCNet-GTA5", "Player Menu");
+        //NativeMenu vehicleSpawnerMenu = new NativeMenu("KCNet-GTA5", "Vehicle Spawner Menu");
+        NativeMenu vehicleOptionsMenu = new NativeMenu("KCNet-GTA5", "Vehicle Options Menu");
+        NativeMenu weaponsMenu = new NativeMenu("KCNet-GTA5", "Weapons Menu");
+        //NativeMenu cheatsMenu = new NativeMenu("KCNet-GTA5", "Cheat menu");
+        //NativeMenu teleportMenu = new NativeMenu("KCNet-GTA5", "Teleport menu");
 
-        bool canSuperJump = false;
-        bool isNeverWanted = false;
-        bool SpawnIntoVehicle = false;
+        //NativeMenu pedChangerMenu = new NativeMenu("KCNet-GTA5", "Change model");
+        //NativeMenu testMenu = new NativeMenu("KCNet-GTA5", "Test Menu");
+
+        //bool canSuperJump = false;
+        //bool isNeverWanted = false;
+        //bool SpawnIntoVehicle = false;
         bool isFlamingBulletsEnabled = false;
         bool isExplosiveBulletsEnabled = false;
-        bool isExplosiveMeleeEnabled = false;
+        //bool isExplosiveMeleeEnabled = false;
+
+        //bool isMobileRadioActive = false;
 
         public Main()
-        {
+        {            
             CreateMainMenu();
-            CreatePlayerMenu();
+            //CreatePlayerMenu();
+            playerMenu.CreatePlayerMenu();
+#if _TEST
+            vehicleSpawner.CreateVehicleSpawnerMenu();
+#endif //_TEST
+#if !_TEST
             CreateVehicleSpawnerMenu();
+#endif //!_TEST
+
+
             CreateVehicleOptionsMenu();
             CreateWeaponsMenu();
-            CreateCheatMenu();
-            CreateTeleportMenu();
-            CreatePedChangerMenu();
+            //CreateTestMenu();
+
+            // New classes
+            cheatsMenu.CreateCheatMenu();
+            // Implement this
+            //PedMenu.CreatePedChangerMenu();
+            pedChanger.CreatePedChangerMenu();
+            teleportMenu.CreateTeleportMenu();
+            testMenu.CreateTestMenu();
+            //playerMenu.CreatePlayerMenu();
 
             AddMenusToPool();
 
@@ -70,89 +120,28 @@ namespace TutorialMod
         private void CreateMainMenu()
         {
             // Define sub menus under mainMenu
-            mainMenu.AddSubMenu(playerMenu);
+            //mainMenu.AddSubMenu(playerMenu);
+            mainMenu.AddSubMenu(playerMenu.playerMenu);
+#if _TEST
+            mainMenu.AddSubMenu(vehicleSpawner.vehicleSpawnerMenu);
+#endif //_TEST
+
+#if !_TEST
             mainMenu.AddSubMenu(vehicleSpawnerMenu);
+#endif
+
+            //mainMenu.AddSubMenu(vehicleSpawner);
+
             mainMenu.AddSubMenu(vehicleOptionsMenu);
             mainMenu.AddSubMenu(weaponsMenu);
-            mainMenu.AddSubMenu(cheatsMenu);
-            mainMenu.AddSubMenu(teleportMenu);
-            mainMenu.AddSubMenu(pedChangerMenu);
-        }
-
-        private void CreatePlayerMenu()
-        {
-            // TODO Add force field option (Blows up cars around player and push them away.)
-
-            // Fix player
-            NativeItem itemFixPlayer = new NativeItem("Fix player", "Restores player's health and armor");
-            // This is the equivalent to:
-            // private void FixPlayer(object sender, EventArgs e)
-            itemFixPlayer.Activated += (sender, args) =>
-            {
-                Game.Player.Character.Health = Game.Player.Character.MaxHealth;
-                Game.Player.Character.Armor = Game.Player.MaxArmor;
-                Notification.Show("Health and armor restored!");
-            };
-            playerMenu.Add(itemFixPlayer);
-
-            // Invincible
-            NativeCheckboxItem checkBoxInvincible = new NativeCheckboxItem("Invincible", "Gives you god mode");
-            checkBoxInvincible.CheckboxChanged += (sender, args) =>
-            {
-                Game.Player.Character.IsInvincible = checkBoxInvincible.Checked;
-                // Equivalent of doing this: ("IsInvincible: " + Game.Player.Character.IsInvincible.ToString())
-                Notification.Show($"Invincible: {Game.Player.Character.IsInvincible}");
-            };
-            playerMenu.Add(checkBoxInvincible);
-
-            // Wanted level
-            NativeListItem<int> listItemWantedLevel = new NativeListItem<int>("Wanted Level", "Adjust player's wanted level", 0, 1, 2, 3, 4, 5);
-            listItemWantedLevel.ItemChanged += (sender, args) =>
-            {
-                Game.Player.WantedLevel = args.Object;
-            };
-            playerMenu.Add(listItemWantedLevel);
-
-            // Never wanted, Well it did work, I just copied what I was doing for the super jump code.
-            NativeCheckboxItem checkboxNeverWanted = new NativeCheckboxItem("Never Wanted");
-            checkboxNeverWanted.CheckboxChanged += (sender, args) =>
-            {
-                isNeverWanted = checkboxNeverWanted.Checked;
-            };
-            playerMenu.Add(checkboxNeverWanted);
-
-            // Spawn player in car
-            NativeCheckboxItem checkBoxSpawnIntoVehicle = new NativeCheckboxItem("Spawn into car", "This option sets you to spawn in the car instead of out of it.");
-            checkBoxSpawnIntoVehicle.CheckboxChanged += (sender, args) =>
-            {
-                SpawnIntoVehicle = checkBoxSpawnIntoVehicle.Checked;
-            };
-            playerMenu.Add(checkBoxSpawnIntoVehicle);
-
-            /* I can also use NativeListItem with string like so
-             NativeListItem<string> listItemHairColor = new NativeListItem<string>("Hair Color", "Change Hair Color", "Black", "White", "Blue", "Green");
-            listItemHairColor.ItemChanged += (sender, args) =>
-            {
-                Notification.Show($"You've selected the Hair Color: {args.Object}");
-            };
-            playerMenu.Add(listItemHairColor);
-            */
-
-            // Super jump
-            NativeCheckboxItem checkBoxSuperJump = new NativeCheckboxItem("Super jump");
-            checkBoxSuperJump.CheckboxChanged += (sender, args) =>
-            {
-                canSuperJump = checkBoxSuperJump.Checked;
-            };
-            playerMenu.Add(checkBoxSuperJump);
-
-            // Explosive melee
-            NativeCheckboxItem checkBoxExplosiveMelee = new NativeCheckboxItem("Explosive melee");
-            checkBoxExplosiveMelee.CheckboxChanged += (sender, args) =>
-            {
-                isExplosiveMeleeEnabled = checkBoxExplosiveMelee.Checked;
-            };
-            playerMenu.Add(checkBoxExplosiveMelee);
+            
+            //mainMenu.AddSubMenu(testMenu);
+            // New classes
+            mainMenu.AddSubMenu(cheatsMenu.cheatsMenu);
+            mainMenu.AddSubMenu(pedChanger.pedChangerMenu);
+            mainMenu.AddSubMenu(teleportMenu.teleportMenu);
+            mainMenu.AddSubMenu(testMenu.testMenu);
+            //mainMenu.AddSubMenu(playerMenu.playerMenu);
         }
 
         private void CreateWeaponsMenu()
@@ -186,20 +175,22 @@ namespace TutorialMod
             weaponsMenu.Add(checkBoxBulletsExplosive);
         }
 
+#if !_TEST
+
         private void CreateVehicleSpawnerMenu()
         {
-            foreach(VehicleHash vehicleHash in Enum.GetValues(typeof(VehicleHash)))
+            foreach (VehicleHash vehicleHash in Enum.GetValues(typeof(VehicleHash)))
             {
                 NativeItem itemSpawnVehicle = new NativeItem(vehicleHash.ToString(), $"Spawns a {vehicleHash} right in front of you!");
 
                 itemSpawnVehicle.Activated += (sender, args) =>
                 {
                     Ped character = Game.Player.Character;
-                    
+
 
                     Model vehicleModel = new Model(vehicleHash);
                     vehicleModel.Request();
-                    
+
                     //TODO Try and figure out Random vehicle spawning:
                     // World.CreateRandomVehicle(spawnPosition, vehicleModel);
 
@@ -208,7 +199,9 @@ namespace TutorialMod
                     // So if it's set to 2, set max amount of spawned cars at a time to 2.
                     Vehicle vehicle = World.CreateVehicle(vehicleModel, character.Position + character.ForwardVector * 3.0f, character.Heading + 90.0f);
 
-                    if (SpawnIntoVehicle)
+
+                    //if (SpawnIntoVehicle)
+                    if (playerMenu.GetSpawnIntoVehicle())
                     {
                         // If player is in vehicle, remove old one before spawning in new
                         // Get current vehicle and delete it.
@@ -218,12 +211,12 @@ namespace TutorialMod
                             Vehicle currentVehicle = character.CurrentVehicle;
                             currentVehicle.Delete();
                             character.SetIntoVehicle(vehicle, VehicleSeat.Driver);
-                        } 
+                        }
                         else
                         {
                             character.SetIntoVehicle(vehicle, VehicleSeat.Driver);
                         }
-                        
+
                     }
 
                     vehicleModel.MarkAsNoLongerNeeded();
@@ -233,6 +226,7 @@ namespace TutorialMod
                 vehicleSpawnerMenu.Add(itemSpawnVehicle);
             }
         }
+#endif //!_TEST
 
         private void CreateVehicleOptionsMenu()
         {
@@ -258,152 +252,70 @@ namespace TutorialMod
             
         }
 
-        private void CreateCheatMenu()
-        {
+        // 3-29-2024 @ 4:18AM
+    //    private void CreateTestMenu()
+    //    {
+    //        // I tested this and it works fine. 3-29-2024 @ 4:34AM
+    //        NativeCheckboxItem toggleMobileRadioItem = new NativeCheckboxItem("Toggle Mobile Radio");
 
+    //    toggleMobileRadioItem.CheckboxChanged += (sender, args) =>
+    //        {
+    //            // https://github.com/scripthookvdotnet/scripthookvdotnet/issues/179
+    //            isMobileRadioActive = toggleMobileRadioItem.Checked;
+    //            Function.Call(Hash.SET_MOBILE_PHONE_RADIO_STATE, isMobileRadioActive);
+    //            Function.Call(Hash.SET_MOBILE_RADIO_ENABLED_DURING_GAMEPLAY, isMobileRadioActive);
+    //        };
+    ////testMenu.Add(toggleMobileRadioItem);
+    //    }
 
-            // They are using floats in Menyoo and defining values with strings too
-            // https://github.com/MAFINS/MenyooSP/blob/master/Solution/source/Submenus/WeatherOptions.cpp#L37
-
-            // Now that I possibly got this sorted, how do I add it to the listItemGravityLevel.
-            // Not sure if this is what I would need to use.
-            SortedDictionary<string, int> gravityList = new SortedDictionary<string, int>
-            {
-                { "Normal Gravity", 0 },
-                {"Grav1", 1 },
-                {"Grav2", 2 },
-                {"Grav3", 3 }
-            };
-
-            // I got this part of it working
-            // First time using functions with a hash value like this.
-            // TODO Add what each gravity level is in the list (0, default) (1, ...) (2 ...) (3 ...)
-            NativeListItem<int> listItemGravityLevel = new NativeListItem<int>("Gravity:", "Sets your gravity level", 0, 1, 2, 3);
-            // I wonder if this function works with floats.
-            //NativeListItem<float> listItemGravityLevel = new NativeListItem<float>("Gravity:", "Sets your gravity level", 0.008f, 0.015f, 0.1f, 0.2f);
-            listItemGravityLevel.ItemChanged += (sender, args) => {
-
-                Function.Call(Hash.SET_GRAVITY_LEVEL, args.Object);
-                Notification.Show($"Your gravity has been set to {args.Object}");
-            };
-            cheatsMenu.Add(listItemGravityLevel);
-        }
-
-        private void CreateTeleportMenu()
-        {
-            NativeItem itemTeleportWaypoint = new NativeItem("Waypoint", "Teleports you to the waypoint on the map");
-
-            //TODO Fix this to where it doesn't put the player/vehicle under the world.
-            //TODO Fix this to where it isn't a bunch of duplicated code for every teleport option.
-            itemTeleportWaypoint.Activated += (sender, args) =>
-            {
-                if (Game.IsWaypointActive)
-                {
-                    var player = Game.Player;
-                    var playerchar = player.Character;
-                    Vector3 pos = World.WaypointPosition;
-
-                    if (playerchar.IsInVehicle())
-                    {
-
-                        // Changing this to player.getHashCode() Makes it to where I can teleport the car.
-                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, true, false, true);
-
-                        // This might work for vehicles, I couldn't get it working like this though.
-                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
-
-                        Notification.Show("You teleported your car to the ~p~marker~w~!");
-                        // Get last vehicle player was in.
-                        //Vehicle vehicle = playerchar.CurrentVehicle;
-                        //Vehicle lastVeh = playerchar.LastVehicle;
-                        //lastVeh.Delete();
-
-                    }
-                    else
-                    {
-
-                        // https://github.com/scripthookvdotnet/scripthookvdotnet/wiki/How-Tos#calling-native-functions
-                        // Testing set entity coords
-                        // Functions might be useful if I can figure out how to use them, this wasn't working but I fixed it.
-                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
-
-                        // Use this anytime you want to teleport the player.
-                        // TODO figure out how to set the coordinates invidually so i can do "pos.Y + 5"
-                        // Something like this below might work, but it complains about not being a Vector3 if used.
-                        // float targetPosX = pos.X;
-                        var zCoords = World.GetGroundHeight(pos);
-                        Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y, zCoords, 0.0, false, false, true);
-                        
-                        //Game.Player.Character.Position = pos;
-
-                        // Player still falls through ground in certain areas with this below.
-                        //Function.Call(Hash.START_PLAYER_TELEPORT, player.GetHashCode(), pos.X, pos.Y + 10, pos.Z, 0.0, false, false, true);
-
-                        Notification.Show("You have been teleported to the ~p~marker~w~!");
-                    }
-                }
-                else
-                {
-                    Notification.Show("~r~Error~w~: no waypoint is set!");
-                }
-            };
-            teleportMenu.Add(itemTeleportWaypoint);
-        }
-
-        private void CreatePedChangerMenu()
-        {
-            // TODO Add different categories
-            foreach(PedHash pedHash in Enum.GetValues(typeof(PedHash)))
-            {
-                NativeItem itemChangePed = new NativeItem(pedHash.ToString(), "Changes your skin");
-
-                itemChangePed.Activated += (sender, args) =>
-                {
-                    var characterModel = new Model(pedHash);
-                    characterModel.Request(500);
-
-                    // If the model isn't loaded, wait until it is.
-                    while (!characterModel.IsLoaded) Script.Wait(100);
-
-                    Game.Player.ChangeModel(characterModel);
-                    Notification.Show($"You have changed your character.");
-
-                    characterModel.MarkAsNoLongerNeeded();
-
-                };
-                pedChangerMenu.Add(itemChangePed);
-            }
-        }
-
-        private void AddMenusToPool()
+private void AddMenusToPool()
         {
             // Main menu and submenus go under menuPool
             menuPool.Add(mainMenu);
-            menuPool.Add(playerMenu);
+            menuPool.Add(playerMenu.playerMenu);
+            //menuPool.Add(playerMenu);
+#if _TEST
+            mainMenu.AddSubMenu(vehicleSpawner.vehicleSpawnerMenu);
+#endif
+#if !_TEST
             menuPool.Add(vehicleSpawnerMenu);
+#endif
+
             menuPool.Add(vehicleOptionsMenu);
+            //menuPool.Add(vehicleOptions.vehicleOptionsMenu);
+
             menuPool.Add(weaponsMenu);
-            menuPool.Add(cheatsMenu);
-            menuPool.Add(teleportMenu);
-            menuPool.Add(pedChangerMenu);
+            //menuPool.Add(cheatsMenu);
+            //menuPool.Add(teleportMenu);
+            //menuPool.Add(teleportMenu);
+            // Will this work?
+            //menuPool.Add(pedChangerMenu);
+            //menuPool.Add(testMenu);
+
+            // New classes
+            menuPool.Add(cheatsMenu.cheatsMenu);
+            menuPool.Add(pedChanger.pedChangerMenu);
+            menuPool.Add(teleportMenu.teleportMenu);
+            menuPool.Add(testMenu.testMenu);
         }
+
 
         private void OnTick(object sender, EventArgs e)
         {
             // Needed for the Menu to function
             menuPool.Process();
 
-            if(isNeverWanted && Game.Player.WantedLevel > 0)
+            if(playerMenu.GetNeverWanted() && Game.Player.WantedLevel > 0)
             {
                 Game.Player.WantedLevel = 0;
             }
 
-            if(canSuperJump)
+            if (playerMenu.GetCanSuperJump())
             {
                 Game.Player.SetSuperJumpThisFrame();
             }
 
-            if(isExplosiveMeleeEnabled)
+            if (playerMenu.GetExplosiveMeleeEnabled())
             {
                 Game.Player.SetExplosiveMeleeThisFrame();
             }
@@ -417,6 +329,13 @@ namespace TutorialMod
             {
                 Game.Player.SetExplosiveAmmoThisFrame();
             }
+
+            /*
+             * Try to add a couple of things like this to the menu.
+            if (isFastRunEnabled)
+            {
+                Game.Player.SetRunSpeedMultThisFrame(amount);
+            }*/
         }
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
